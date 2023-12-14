@@ -35,46 +35,6 @@ IV_Pois = function(fml, df, rep=200) {
   summary(res, .vcov=vcov_mrx)
 }
 
-z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + z_zgjij
-
-# Basin and year fixed effects
-est_noIV_byfe = fepois(btl_p_y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + year, df1)
-est_IV_byfe = IV_Pois(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + year | dams_pby ~ RGxD_hat, df1)
-est_IV_noboot_byfe = IV_Pois_est(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + year | dams_pby ~ RGxD_hat, df1)
-
-# Country and year fixed effects
-est_noIV_cyfe = fepois(btl_p_y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country + year, df1)
-est_IV_cyfe  = IV_Pois(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country + year | dams_pby ~ RGxD_hat, df1)
-est_IV_noboot_cyfe  = IV_Pois_est(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country + year | dams_pby ~ RGxD_hat, df1)
-
-# Country^year fixed effects
-est_noIV_cpyfe = fepois(btl_p_y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country^year, df1)
-est_IV_cpyfe = IV_Pois(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country^year | dams_pby ~ RGxD_hat, df1)
-est_IV_noboot_cpyfe = IV_Pois_est(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | Country^year | dams_pby ~ RGxD_hat, df1)
-
-# Basins + Country^year fixed effects
-est_noIV_allfe = fepois(btl_p_y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + Country^year, df1)
-est_IV_allfe = IV_Pois(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + Country^year | dams_pby ~ RGxD_hat, df1)
-est_IV_noboot_allfe = IV_Pois_est(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_ahjvn + z_zgjij | HYBAS_ID + Country^year | dams_pby ~ RGxD_hat, df1)
-
-
-# Basin and year fixed effects
-etable(est_noIV_byfe, est_IV_byfe, est_IV_noboot_byfe)
-# Country and year fixed effects
-etable(est_noIV_cyfe, est_IV_cyfe, est_IV_noboot_cyfe)
-# Country^year fixed effects
-etable(est_noIV_cpyfe, est_IV_cpyfe, est_IV_noboot_cpyfe)
-# Basins + Country^year fixed effects
-etable(est_noIV_allfe, est_IV_allfe, est_IV_noboot_allfe)
-
-etable(est_noIV_byfe, est_noIV_cyfe, est_noIV_cpyfe, est_noIV_allfe)
-etable(est_IV_noboot_byfe, est_IV_noboot_cyfe, est_IV_noboot_cpyfe, est_IV_noboot_allfe)
-etable(est_IV_byfe, est_IV_cyfe, est_IV_cpyfe, est_IV_allfe)
-
-
-
-
-
 
 # Basin and year fixed effects
 est_noIV_byfe_oth = fepois(btl_p_y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | HYBAS_ID + year, df1)
