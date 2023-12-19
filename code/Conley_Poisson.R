@@ -26,51 +26,82 @@ IV_Pois_Conley_est = function(fml, df) {
   feglm(new_fml, new_data, family='poisson')
 }
 
-# Get the VCOV matrix:
-IV_Pois_Conley_VarCov = function(fml, df, cutoff=100) {
-  vcov_conley(IV_Pois_Conley_est(fml, df), cutoff = cutoff, lat = "lat", lon = "lon")
-}
-
 # Function to get estimates and SEs:
 IV_Pois_Conley = function(fml, df, cutoff=100) {
   res = IV_Pois_Conley_est(fml, df)
-  vcov_mrx = IV_Pois_Conley_VarCov(fml, df, cutoff)
+  vcov_mrx = vcov_conley(IV_Pois_Conley_est(fml, df), cutoff = cutoff, lat = "lat", lon = "lon")
   summary(res, .vcov=vcov_mrx)
 }
 
-est_IV_Con_byfe = IV_Pois_Conley(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | HYBAS_ID + year | dams_pby ~ RGxD_hat, df1)
-est_IV_Con_cyfe = IV_Pois_Conley(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year | dams_pby ~ RGxD_hat, df1)
-#est_IV_Con_cpyfe = IV_Pois_Conley(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country^year | dams_pby ~ RGxD_hat, df1)             - does not operate due to interaction of FEs 
-#est_IV_Con_allfe = IV_Pois_Conley(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | HYBAS_ID + Country^year | dams_pby ~ RGxD_hat, df1)  - does not operate due to interaction of FEs 
+### All conflicts:
+# Country + year Fixed Effects:
+est_IV_Con_cyfe_conf = IV_Pois_Conley(confs_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year | dams_pby ~ RGxD_hat, df)
+# Country + year + Country^year Fixed Effects:
+fe_ols = feols(confs_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year + Country^year | dams_pby ~ RGxD_hat, df)
+resid_1st_stage = resid(summary(fe_ols, stage=1))
+y = model.matrix(fe_ols, type = 'lhs')
+RHS = model.matrix(fe_ols, type=c('iv.endo', 'iv.exo'))
+RHS_control_function = cbind(RHS, resid_1st_stage)
+FE = data.frame(Country = df$Country, year = df$year)
+lat = df$lat
+lon = df$lon
+new_data = cbind(y, RHS_control_function, FE, lat, lon)
+res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| Country + year + Country^year , new_data, family='poisson')
+vcov_mrx = vcov_conley(res, cutoff = cutoff, lat = "lat", lon = "lon")
+est_IV_Con_allfe_conf = summary(res, .vcov=vcov_mrx)
+etable(est_IV_Con_cyfe_conf, est_IV_Con_allfe_conf)
 
-### Manually calculate functions for interaction of FEs:
-cutoff = 100
+
+### Battles:
+# Country + year Fixed Effects:
+est_IV_Con_cyfe_btl = IV_Pois_Conley(battles_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year | dams_pby ~ RGxD_hat, df)
+# Country + year + Country^year Fixed Effects:
+#### Manually calculate functions for interaction of FEs:
+#cutoff = 100
+## Country^year FE:
+#fe_ols = feols(battles_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country^year | dams_pby ~ RGxD_hat, df)
+#resid_1st_stage = resid(summary(fe_ols, stage=1))
+#y = model.matrix(fe_ols, type = 'lhs')
+#RHS = model.matrix(fe_ols, type=c('iv.endo', 'iv.exo'))
+#RHS_control_function = cbind(RHS, resid_1st_stage)
+#FE = data.frame(Country = df$Country, year = df$year)
+#lat = df$lat
+#lon = df$lon
+#new_data = cbind(y, RHS_control_function, FE, lat, lon)
+#res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| Country^year , new_data, family='poisson')
+#vcov_mrx = vcov_conley(res, cutoff = cutoff, lat = "lat", lon = "lon")
+#est_IV_Con_cpyfe = summary(res, .vcov=vcov_mrx)
+
 # Country^year FE:
-fe_ols = feols(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country^year | dams_pby ~ RGxD_hat, df1)
+fe_ols = feols(battles_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year + Country^year | dams_pby ~ RGxD_hat, df)
 resid_1st_stage = resid(summary(fe_ols, stage=1))
 y = model.matrix(fe_ols, type = 'lhs')
 RHS = model.matrix(fe_ols, type=c('iv.endo', 'iv.exo'))
 RHS_control_function = cbind(RHS, resid_1st_stage)
-FE = data.frame(Country = df1$Country, year = df1$year)
-lat = df1$lat
-lon = df1$lon
+FE = data.frame(Country = df$Country, year = df$year)
+lat = df$lat
+lon = df$lon
 new_data = cbind(y, RHS_control_function, FE, lat, lon)
-res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| Country^year , new_data, family='poisson')
+res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| Country + year + Country^year , new_data, family='poisson')
 vcov_mrx = vcov_conley(res, cutoff = cutoff, lat = "lat", lon = "lon")
-est_IV_Con_cpyfe = summary(res, .vcov=vcov_mrx)
+est_IV_Con_allfe_btl = summary(res, .vcov=vcov_mrx)
+etable(est_IV_Con_cyfe_btl, est_IV_Con_allfe_btl)
 
-# HYBAS_ID + Country^year FE:
-fe_ols = feols(btl_p_y ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | HYBAS_ID + Country^year | dams_pby ~ RGxD_hat, df1)
+
+### All riots:
+# Country + year Fixed Effects:
+est_IV_Con_cyfe_riot = IV_Pois_Conley(riots_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year | dams_pby ~ RGxD_hat, df)
+# Country + year + Country^year Fixed Effects:
+fe_ols = feols(riots_py ~ z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn | Country + year + Country^year | dams_pby ~ RGxD_hat, df)
 resid_1st_stage = resid(summary(fe_ols, stage=1))
 y = model.matrix(fe_ols, type = 'lhs')
 RHS = model.matrix(fe_ols, type=c('iv.endo', 'iv.exo'))
 RHS_control_function = cbind(RHS, resid_1st_stage)
-FE = data.frame(HYBAS_ID = df1$HYBAS_ID, Country = df1$Country, year = df1$year)
-lat = df1$lat
-lon = df1$lon
+FE = data.frame(Country = df$Country, year = df$year)
+lat = df$lat
+lon = df$lon
 new_data = cbind(y, RHS_control_function, FE, lat, lon)
-res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| HYBAS_ID + Country^year , new_data, family='poisson')
+res = feglm(y ~ dams_pby + z_fobki + z_hyeah + z_vcjei + z_nlvsk + z_ahjvn + resid_1st_stage| Country + year + Country^year , new_data, family='poisson')
 vcov_mrx = vcov_conley(res, cutoff = cutoff, lat = "lat", lon = "lon")
-est_IV_Con_allfe = summary(res, .vcov=vcov_mrx)
-
-etable(est_IV_Con_byfe, est_IV_Con_cyfe, est_IV_Con_cpyfe, est_IV_Con_allfe, tex=TRUE)
+est_IV_Con_allfe_riot = summary(res, .vcov=vcov_mrx)
+etable(est_IV_Con_cyfe_riot, est_IV_Con_allfe_riot)
